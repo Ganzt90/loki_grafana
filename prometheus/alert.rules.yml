@@ -1,0 +1,16 @@
+groups:
+  - name: example
+    rules:
+      - alert: LokiDown
+        expr: up{job="loki"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Loki instance is down"
+          description: "Loki has been down for more than 2 minutes."
+  - name: Count greater than 5
+    rules:
+    - alert: CountGreaterThan5
+      expr: loki_tcp_connections{instance="orion.server.local:3100", job="loki", protocol="grpc"} > 1
+      for: 5s

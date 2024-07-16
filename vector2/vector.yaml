@@ -1,0 +1,22 @@
+# api:
+#   enabled: true
+#   address: 0.0.0.0:8686
+sources:
+  demo_logs:
+    type: demo_logs
+    interval: 1
+    format: shuffle
+    lines: ['{"level": "info", "message": "This is an info log"}',
+            '{"level": "warn", "message": "This is a warning log"}',
+            '{"level": "error", "message": "This is an error log"}',
+            '{"level": "debug", "message": "This is a debug log"}'
+            ]
+
+sinks:
+  console:
+    inputs:
+      - demo_logs
+    target: stdout
+    type: console
+    encoding:
+      codec: text

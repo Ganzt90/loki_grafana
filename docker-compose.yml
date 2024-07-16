@@ -1,0 +1,85 @@
+version: "3"
+
+services:
+  grafana_test:
+    image: grafana/grafana:10.2.0
+    container_name: grafana_test
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=test123
+      - GF_SMTP_ENABLED=true
+      - GF_SMTP_HOST=mailserver:25
+    volumes:
+      - ./grafana:/var/lib/grafana
+      - ./grafana-provisioning/:/etc/grafana/provisioning/
+    ports:
+      - "3000:3000"
+    logging:
+      driver: syslog
+      options:
+        syslog-address: "udp://127.0.0.1:5123"
+        tag: "grafana"
+    depends_on:
+      - prometheus
+      - alertmanager
+
+  prometheus:
+    container_name: prometheus_oauth
+    hostname: prometheus_oauth
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./prometheus/alert.rules.yml:/etc/prometheus/alert.rules.yml
+
+  alertmanager:
+    container_name: alertmanager
+    hostname: alertmanager
+    image: prom/alertmanager:latest
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+
+  smtp4dev:
+    container_name: mailserver
+    hostname: mailserver
+    image: rnwood/smtp4dev
+    ports:
+      - "2800:80"
+      - "2550:25"
+    environment:
+      - ASPNETCORE_URLS=http://+:80
+
+  loki:
+    container_name: loki
+    image: grafana/loki:2.9.1
+    command: -config.file=/conf/loki-config.yaml
+    volumes:
+      - ./loki/data:/data
+      - ./loki/conf:/conf
+    ports:
+      - "3100:3100"
+
+  vector:
+    image: timberio/vector:0.33.0-debian
+    container_name: vector
+    volumes:
+      - ./vector/vector.yaml:/etc/vector/vector.yaml:ro
+    ports:
+      - "127.0.0.1:5123:5123/udp"
+
+  vector2:
+        image: timberio/vector:0.39.0-alpine
+        container_name: vector2
+        volumes:
+          - ./vector2:/etc/vector
+          - ./logs:/tmp/logs
+        restart: unless-stopped
+        logging:
+          driver: syslog
+          options:
+            syslog-address: "udp://127.0.0.1:5125"
+            tag: "vector2"
+
